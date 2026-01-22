@@ -2,81 +2,82 @@ document.addEventListener('DOMContentLoaded', () => {
     // Game elements
     const gameArea = document.getElementById('game-area');
     const scoreElement = document.getElementById('score');
-    const missesElement = document.getElementById('misses');
     const gameOverScreen = document.getElementById('game-over');
     const finalScoreElement = document.getElementById('final-score');
     const restartButton = document.getElementById('restart-button');
-    
-    // Create miss indicator element
-    const missIndicator = document.createElement('div');
-    missIndicator.id = 'miss-indicator';
-    missIndicator.textContent = 'MISS!';
-    missIndicator.style.display = 'none';
-    document.querySelector('.game-container').appendChild(missIndicator);
-    
+
     // Game state
     let score = 0;
-    let misses = 0;
     let gameActive = true;
     let activeMouseCount = 0;
-    let maxMice = 3; // Maximum number of mice on screen at once (reduced for easier gameplay)
+    let maxMice = 3; // Maximum number of mice on screen at once
 
-    // Game settings (adjusted for better playability)
-    const maxMisses = 5; // Increased from 3 to give players more chances
+    // Game settings
     const mouseSpeed = {
-        min: 1, // Reduced from 2 for slower movement
-        max: 3  // Reduced from 5 for slower movement
+        min: 1,
+        max: 3
     };
-    const mouseSpawnInterval = 1500; // Increased from 1000ms for less frequent spawning
+    const mouseSpawnInterval = 1500; // New mouse every 1.5 seconds
     
     // Initialize game
     function initGame() {
         score = 0;
-        misses = 0;
         gameActive = true;
         activeMouseCount = 0;
-        
+
         // Update UI
         scoreElement.textContent = score;
-        missesElement.textContent = misses;
         gameOverScreen.classList.add('hidden');
-        
-        // Clear any existing mice
+
+        // Clear any existing mice and explosions
         const existingMice = document.querySelectorAll('.mouse');
         existingMice.forEach(mouse => mouse.remove());
-        
+        const existingExplosions = document.querySelectorAll('.explosion');
+        existingExplosions.forEach(exp => exp.remove());
+
         // Start spawning mice
         startSpawningMice();
     }
-    
-    // Handle game area clicks (misses)
-    gameArea.addEventListener('click', (e) => {
-        // Only count as miss if clicking directly on game area (not on a mouse)
-        if (e.target === gameArea && gameActive) {
-            misses++;
-            missesElement.textContent = misses;
-            
-            // Show miss indicator at click position
-            missIndicator.style.display = 'block';
-            missIndicator.style.left = `${e.clientX - gameArea.getBoundingClientRect().left - 40}px`;
-            missIndicator.style.top = `${e.clientY - gameArea.getBoundingClientRect().top - 40}px`;
-            
-            // Hide miss indicator after a short delay
-            setTimeout(() => {
-                missIndicator.style.display = 'none';
-            }, 500);
-            
-            // Flash the misses counter
-            missesElement.parentElement.classList.add('flash');
-            setTimeout(() => {
-                missesElement.parentElement.classList.remove('flash');
-            }, 500);
-            
-            if (misses >= maxMisses) {
-                endGame();
-            }
+
+    // Create explosion effect
+    function createExplosion(x, y) {
+        const explosion = document.createElement('div');
+        explosion.classList.add('explosion');
+        explosion.style.left = `${x}px`;
+        explosion.style.top = `${y}px`;
+
+        // Create multiple particles for firework effect
+        const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#ffa07a', '#98d8c8', '#f7dc6f', '#bb8fce'];
+        const particleCount = 12;
+
+        for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement('div');
+            particle.classList.add('explosion-particle');
+
+            // Random color
+            particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+
+            // Calculate random direction
+            const angle = (Math.PI * 2 * i) / particleCount;
+            const velocity = 50 + Math.random() * 50; // Random distance
+            const tx = Math.cos(angle) * velocity;
+            const ty = Math.sin(angle) * velocity;
+
+            particle.style.setProperty('--tx', `${tx}px`);
+            particle.style.setProperty('--ty', `${ty}px`);
+
+            explosion.appendChild(particle);
         }
-    });
+
+        gameArea.appendChild(explosion);
+
+        // Remove explosion after animation
+        setTimeout(() => {
+            explosion.remove();
+        }, 600);
+    }
+    
+    // No more click handling for misses - hover-based gameplay!
     
     // Create a mouse element
     function createMouse() {
@@ -102,25 +103,33 @@ document.addEventListener('DOMContentLoaded', () => {
         const dx = Math.cos(angle) * speed;
         const dy = Math.sin(angle) * speed;
         
-        // Add click handler
-        mouse.addEventListener('click', (e) => {
-            if (!gameActive) return;
-            
-            // Prevent the click from registering as a miss
-            e.stopPropagation();
-            
+        // Add hover handler - just hover over the mouse to catch it!
+        let caught = false;
+        mouse.addEventListener('mouseenter', () => {
+            if (!gameActive || caught) return;
+            caught = true;
+
             // Increase score
             score++;
             scoreElement.textContent = score;
-            
-            // Make mouse fade out
-            mouse.classList.add('fade-out');
-            
+
+            // Get mouse position for explosion
+            const rect = mouse.getBoundingClientRect();
+            const gameRect = gameArea.getBoundingClientRect();
+            const explosionX = rect.left + rect.width / 2 - gameRect.left;
+            const explosionY = rect.top + rect.height / 2 - gameRect.top;
+
+            // Create explosion effect
+            createExplosion(explosionX, explosionY);
+
+            // Make mouse burst out
+            mouse.classList.add('caught');
+
             // Remove mouse after animation
             setTimeout(() => {
                 mouse.remove();
                 activeMouseCount--;
-            }, 500);
+            }, 400);
         });
         
         // Add to game area
