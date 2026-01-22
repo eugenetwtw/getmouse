@@ -19,15 +19,15 @@ document.addEventListener('DOMContentLoaded', () => {
     let misses = 0;
     let gameActive = true;
     let activeMouseCount = 0;
-    let maxMice = 5; // Maximum number of mice on screen at once
-    
-    // Game settings
-    const maxMisses = 3;
+    let maxMice = 3; // Maximum number of mice on screen at once (reduced for easier gameplay)
+
+    // Game settings (adjusted for better playability)
+    const maxMisses = 5; // Increased from 3 to give players more chances
     const mouseSpeed = {
-        min: 2,
-        max: 5
+        min: 1, // Reduced from 2 for slower movement
+        max: 3  // Reduced from 5 for slower movement
     };
-    const mouseSpawnInterval = 1000; // New mouse every 1 second
+    const mouseSpawnInterval = 1500; // Increased from 1000ms for less frequent spawning
     
     // Initialize game
     function initGame() {
@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
         moveMouse(mouse, dx, dy);
         
         // Remove mouse after random time if not clicked
-        const lifespan = Math.random() * 3000 + 2000; // 2-5 seconds
+        const lifespan = Math.random() * 4000 + 3000; // 3-7 seconds (increased for easier gameplay)
         setTimeout(() => {
             if (mouse.parentNode === gameArea) {
                 mouse.remove();
